@@ -1,0 +1,51 @@
+
+workdir: /scratch.global/mccuem_EPICv02
+bucket: equpan
+#sif: /users/9/cull0084/projects/panimal/panimal.sif
+
+conda_envs:
+  assem: qcassem
+
+# NOTE the first assembly is used to identify the outgroup with rule dist_tree
+ref_assem: [T2Tv5, EquCab3, Friesian, Warmblood]
+
+#lineages: [mammalia, laurasiatheria, cetartiodactyla]
+lineages: [mammalia]
+
+pggb:
+  ref_call: T2Tv5
+  haps: 4
+  segm_len: [10000] # -s 10k (def) [10000, 35000, 50000, 100000]
+  perc_ident: [95] # -p 95 (def) [90, 95, 96, 97, 98, 99]
+  min_mat_len: [23] # -k 23 (def) [10, 23, 35, 50, 150, 300]
+  poa_len: ['700.900.1100'] # -G 700,900,1100 (def) ['700.900.1100', '3079.3559', '13033.13117']
+
+mc:
+  del_filter: 10000000
+  max_len: 10000
+  clip: 10000
+  filter: 5 # increased from 2 to 5 (~10% of input)
+  other_contig: 'chrOther'
+  out_name: 'epic-v0.2-mc'
+  vcf_ref: [RefT2Tv5, RefEquCab3] # removed friesian and warmblood from auto vcf gen
+  image: 'docker://quay.io/comparative-genomics-toolkit/cactus:v2.9.0'
+
+# next iteration
+image:
+  panacus: 'docker://docker.io/jonahcullen/panacus:0.2.4'
+  samtools: 'docker://docker.io/jonahcullen/samtools:1.16.1' 
+  vg: 'docker://quay.io/vgteam/vg:v1.60.0'
+  wags: '/users/9/cull0084/.sif/horse/horse_wags.sif'
+  seqkit: 'docker://docker.io/jonahcullen/seqkit-go:2.8.2'
+  pandepth: 'docker://docker.io/jonahcullen/pandepth:2.25'
+  odgi: 'docker://pangenome/odgi:1730924146' # v0.9.0-7-gf4c1671c
+  bedtools: 'docker://docker.io/jonahcullen/bedtools:2.31.0'
+  panimal: '/users/9/cull0084/projects/panimal/panimal.sif'
+
+# mapping eval
+map_samples: 'eval_samples.tsv'
+kmer_length: 29
+ref_fasta: '/home/refgen/horse/Thoroughbred/T2T_TB.v5.fa'
+genome_bins:
+  ecab: 'reference/ecab/T2T_TB.genome.txt'
+
