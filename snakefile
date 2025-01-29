@@ -23,7 +23,7 @@ rule all:
        #    u=genseqs.itertuples()
        #),
         expand(
-            '{bucket}/public/combine/seqs.dist.tsv.edges.weights.txt.communities.pdf',
+            '{bucket}/public/combine/all.dist.tsv.edges.weights.txt.communities.pdf',
             bucket=config['bucket']
         ),
 

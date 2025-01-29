@@ -1,8 +1,8 @@
 # PGGBake
 
-To get started, you will want snakemake version 7 (recommended `mamba` install)
+To get started, you will want snakemake version 7 (recommended `mamba` install) and (for now) a quick copy of `mash`
 ```
-mamba create -n snake snakemake=7.19
+mamba create -n snake -c bioconda -c conda-forge snakemake=7.19 mash python-igraph pycairo
 ```
 
 ### Assembly data

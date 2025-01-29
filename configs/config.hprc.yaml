@@ -23,6 +23,7 @@ pggb:
 #  image: 'docker://quay.io/comparative-genomics-toolkit/cactus:v2.9.0'
 
 image:
+  mash: 'docker://docker.io/jonahcullen/mash:2.3'
   panacus: 'docker://docker.io/jonahcullen/panacus:0.2.4'
   samtools: 'docker://docker.io/jonahcullen/samtools:1.16.1' 
   vg: 'docker://quay.io/vgteam/vg:v1.60.0'

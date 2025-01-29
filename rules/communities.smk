@@ -27,14 +27,15 @@ rule sequence_dist:
         rules.combine_seqs.output.gz,
     output:
         '{bucket}/public/combine/all.dist.tsv'
+    singularity: config['image']['mash']
     threads: 16
     resources:
-        time   = 360,
+        time   = 60,
         mem_mb = 8000
     shell:
         '''
             # calculate mash distance
-            mash dist {input[0]} {input[0]} -s 10000 -i > {output}
+            mash dist {input[0]} {input[0]} -p {threads} -s 10000 -i > {output}
         '''
 
 localrules: mash_to_network
@@ -63,7 +64,7 @@ rule identify_communities:
         edge_wts  = rules.mash_to_network.output.edge_wts,
         verts     = rules.mash_to_network.output.verts,
     output:
-        '{bucket}/public/combine/seqs.dist.tsv.edges.weights.txt.communities.pdf',
+        '{bucket}/public/combine/all.dist.tsv.edges.weights.txt.communities.pdf',
     params:
         net2comm = Path(workflow.basedir) / 'src' / 'net2communities.py'
     threads: 1
