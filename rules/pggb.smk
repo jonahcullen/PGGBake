@@ -2,7 +2,7 @@
 rule combine_assemblies:
     input:
         expand(
-            '{bucket}/public/refgen/linear/clean/{u.breed}/{u.name}/{u.name}.clean.fa',
+            '{bucket}/public/refgen/linear/clean/{u.name}/{u.name}.clean.fa',
             u=genseqs.itertuples(),
             bucket=config['bucket']
         )
@@ -64,7 +64,6 @@ rule identify_communities:
         edges ='{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.list.txt'
     output:
         '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt.communities.pdf',
-       #'{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt.communities_filtered.pdf',
     threads: 1
     resources:
         time   = 20,
@@ -84,8 +83,6 @@ checkpoint contig_split:
     input:
         fa  = '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz',
         fai = '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz.fai',
-       #fa = '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa.gz',
-       #fai = '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa.gz.fai',
     output:
         directory('{bucket}/public/refgen/linear/clean/comms/split')
     threads: 1

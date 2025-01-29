@@ -5,6 +5,7 @@ import gzip
 import lzma
 
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 class RawFile(object):
     def __init__(self,filename):
@@ -37,7 +38,7 @@ class RawFile(object):
 
 def get_fasta(wildcards):
     '''
-    Get fasta file for each assemblies.
+    get fasta file for each assemblies
     '''
     seq = genseqs.loc[genseqs['name'] == (wildcards.name), ['fasta']].dropna()
 
@@ -45,13 +46,13 @@ def get_fasta(wildcards):
 
 def clean_sequence(seq):
     '''
-    Clean sequence by removing invalid characters (only A, C, G, T, U, N valid).
+    clean sequence by removing invalid characters (only A, C, G, T, U, N valid)
     '''
     return Seq(''.join([c for c in seq if c in 'ACGTUNacgtun']))
 
 def calc_lengths(f):
     '''
-    Calculate sequence sequences from fasta input.
+    calculate sequence sequences from fasta input
     '''
     l = []
     for rec in SeqIO.parse(f, 'fasta'):
@@ -59,11 +60,11 @@ def calc_lengths(f):
     l.sort(reverse=True)
     return l
 
-def eval_sample(wildcards):
-    '''
-    get fastq files for each sample
-    '''
-    df = map_evals.loc[(wildcards.sample), ['r1', 'r2']].dropna()
+#def eval_sample(wildcards):
+#    '''
+#    get fastq files for each sample
+#    '''
+#    df = map_evals.loc[(wildcards.sample), ['r1', 'r2']].dropna()
 
     return {'r1': df.r1, 'r2': df.r2}
 
@@ -72,8 +73,6 @@ def extract_rg(f, sample_name):
         header = f.readline().decode('utf-8').strip()
 
     try:
-        # attempt to match illumina header
-       #ill_match = re.match(r'^@(\S+):(\d+):(\S+):(\d+):\d+:\d+:\d+ \S+:\S+:\S+:(\S+)', header)
         ill_match_full = re.match(
             r'^@(\S+):(\d+):(\S+):(\d+):\d+:\d+:\d+ \S+:\S+:\S+:(\S+)$', 
             header

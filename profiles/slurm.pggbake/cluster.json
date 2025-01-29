@@ -1,48 +1,13 @@
 {
-    "download_lineage" :
-    {
-        "output" : ".logs/{rule}/{wildcards.lineage}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.lineage}/%j.{rule}.err"
-    },
-    "compleasm_run" :
-    {
-        "output" : ".logs/{rule}/{wildcards.name}/{wildcards.lineage}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.name}/{wildcards.lineage}/%j.{rule}.err"
-    },
     "clean_assembly" :
     {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
+        "output" : ".logs/{rule}/{wildcards.name}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/{wildcards.name}/%j.{rule}.err"
     },
     "index_clean_assembly" :
     {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "sketch_assembly" :
-    {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "paste_assemblies" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "assemblies_dist" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "dist_tree" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "combine_assemblies" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
+        "output" : ".logs/{rule}/{wildcards.name}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/{wildcards.name}/%j.{rule}.err"
     },
     "sequence_dist" :
     {
@@ -73,110 +38,5 @@
     {
         "output" : ".logs/{rule}/{wildcards.chrom}/s{wildcards.segm_len}_p{wildcards.perc_ident}_k{wildcards.min_mat_len}/G{wildcards.poa_len}/%j.{rule}.out",
         "error"  : ".logs/{rule}/{wildcards.chrom}/s{wildcards.segm_len}_p{wildcards.perc_ident}_k{wildcards.min_mat_len}/G{wildcards.poa_len}/%j.{rule}.err"
-    },
-    "create_blob" :
-    {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "snail_plot" :
-    {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "bbstats" :
-    {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "nx_tables" :
-    {
-        "output" : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.breed}/{wildcards.name}/%j.{rule}.err"
-    },
-    "simulate_mc_reads" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "graph_align_mc_sim_reads" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "annotate_graph_gam" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "linear_ref_path_mc" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "linear_ref_align_mc_sim_reads" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "linear_ref_inject_mc_sam" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "annotate_linear_gam" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "mc_panacus_coverage" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "mc_convert_and_stats" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "convert_vg_to_gfa" :
-    {
-        "output" : ".logs/{rule}/chr{wildcards.chrom}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/chr{wildcards.chrom}/%j.{rule}.err"
-    },
-    "odgi_degree_and_stats" :
-    {
-        "output" : ".logs/{rule}/{wildcards.chrom}/s{wildcards.segm_len}_p{wildcards.perc_ident}_k{wildcards.min_mat_len}/G{wildcards.poa_len}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.chrom}/s{wildcards.segm_len}_p{wildcards.perc_ident}_k{wildcards.min_mat_len}/G{wildcards.poa_len}/%j.{rule}.err"
-    },
-    "cactus_minigraph" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "cactus_graphmap" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "cactus_graphmap_split" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "cactus_align" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "cactus_graphmap_join" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
-    "preprocess_fastqs" :
-    {
-        "output" : ".logs/{rule}/{wildcards.sample}/%j.{wildcards.sample}.{rule}.out",
-        "error"  : ".logs/{rule}/{wildcards.sample}/%j.{wildcards.sample}.{rule}.err"
     },
 }

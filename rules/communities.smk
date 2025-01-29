@@ -1,51 +1,50 @@
 
+localrules: combine_seqs
 rule combine_seqs:
     input:
         expand(
-            '{bucket}/public/refgen/linear/clean/{u.breed}/{u.name}/{u.name}.clean.fa'
-            u=genseqs.itertuples(),
-            bucket=config['bucket']
+            '{bucket}/public/{u.name}/{u.name}.clean.fa',
+            bucket=config['bucket'],
+            u=genseqs.itertuples()
         )
     output:
-        '{bucket}/public/refgen/linear/clean/sequence/all_seqs.fa',
+        fa = '{bucket}/public/combine/all.fa',
+        gz = '{bucket}/public/combine/all.fa.gz',
+    singularity: config['pggb']['image']
     threads: 4
     resources:
         time   = 60,
         mem_mb = 4000
     shell:
         '''
-            cat {input} > {output}
+            cat {input} > {output.fa}
+            bgzip -@ {threads} -c {output.fa} > {output.gz}
+            samtools faidx {output.gz}
         '''
 
 rule sequence_dist:
     input:
-        fltr_fa = '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa',
+        rules.combine_seqs.output.gz,
     output:
-        '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa.gz.fai',
-        '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa.gz.gzi',
-        fa   = '{bucket}/public/refgen/linear/clean/sequence/filter_seqs.fa.gz',
-        dist = '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv'
-    threads: 4
+        '{bucket}/public/combine/all.dist.tsv'
+    threads: 16
     resources:
         time   = 360,
         mem_mb = 8000
     shell:
         '''
-            # combine all clean fastas and index
-            bgzip -@ {threads} -c {input.fltr_fa} > {output.fa}
-            samtools faidx {output.fa}
-
             # calculate mash distance
-            mash dist {output.fa} {output.fa} -s 10000 -i > {output.dist}
+            mash dist {input[0]} {input[0]} -s 10000 -i > {output}
         '''
 
+localrules: mash_to_network
 rule mash_to_network:
     input:
-        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv'
+        rules.sequence_dist.output[0]
     output:
-        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.vertices.id2name.txt',
-        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt',
-        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.list.txt'
+        verts     = '{bucket}/public/combine/all.dist.tsv.vertices.id2name.txt',
+        edge_wts  = '{bucket}/public/combine/all.dist.tsv.edges.weights.txt',
+        edge_list = '{bucket}/public/combine/all.dist.tsv.edges.list.txt'
     params:
         mash2net = Path(workflow.basedir) / 'src' / 'mash2net.py'
     threads: 1
@@ -57,13 +56,14 @@ rule mash_to_network:
             python3 {params.mash2net} -m {input}
         '''
 
+localrules: identify_communities
 rule identify_communities:
     input:
-        verts = '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.vertices.id2name.txt',
-        wts   = '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt',
-        edges ='{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.list.txt'
+        edge_list = rules.mash_to_network.output.edge_list,
+        edge_wts  = rules.mash_to_network.output.edge_wts,
+        verts     = rules.mash_to_network.output.verts,
     output:
-        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt.communities.pdf',
+        '{bucket}/public/combine/seqs.dist.tsv.edges.weights.txt.communities.pdf',
     params:
         net2comm = Path(workflow.basedir) / 'src' / 'net2communities.py'
     threads: 1
@@ -73,8 +73,8 @@ rule identify_communities:
     shell:
         '''
             python3 {params.net2comm} \
-                -e {input.edges} \
-                -w {input.wts} \
+                -e {input.edge_list} \
+                -w {input.edge_wts} \
                 -n {input.verts} \
                 --plot
         '''
