@@ -36,5 +36,5 @@ Just want to point out `--rerun-triggers` here as it helps to be aware of [these
 --rerun-triggers
 Possible choices: code, input, mtime, params, software-env
 
-Define what triggers the rerunning of a job. By default, all triggers are used, which guarantees that results are consistent with the workflow code and configuration. If you rather prefer the traditional way of just considering file modification dates, use ‘–rerun-trigger mtime’
+    Define what triggers the rerunning of a job. By default, all triggers are used, which guarantees that results are consistent with the workflow code and configuration. If you rather prefer the traditional way of just considering file modification dates, use ‘–rerun-trigger mtime’
 ```
