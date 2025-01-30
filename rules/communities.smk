@@ -8,8 +8,10 @@ rule combine_seqs:
             u=genseqs.itertuples()
         )
     output:
-        fa = '{bucket}/public/combine/all.fa',
-        gz = '{bucket}/public/combine/all.fa.gz',
+        '{bucket}/public/combine/all.fa.gz.gzi',
+        fa  = '{bucket}/public/combine/all.fa',
+        gz  = '{bucket}/public/combine/all.fa.gz',
+        fai = '{bucket}/public/combine/all.fa.gz.fai',
     singularity: config['pggb']['image']
     threads: 4
     resources:
@@ -80,3 +82,104 @@ rule identify_communities:
                 --plot
         '''
 
+#rule combine_assemblies:
+#    input:
+#        expand(
+#            '{bucket}/public/refgen/linear/clean/{u.name}/{u.name}.clean.fa',
+#            u=genseqs.itertuples(),
+#            bucket=config['bucket']
+#        )
+#    output:
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa',
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz',
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz.fai',
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz.gzi',
+#    threads: 4
+#    resources:
+#        time   = 480,
+#        mem_mb = 4000
+#    shell:
+#        '''
+#            # combine all clean fastas and index
+#            cat {input} > {output[0]}
+#            bgzip -@ {threads} -c {output[0]} > {output[1]}
+#            samtools faidx {output[1]}
+#
+#        '''
+#
+#rule sequence_dist:
+#    input:
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz.fai',
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz.gzi',
+#        fa = '{bucket}/public/refgen/linear/clean/comms/all_contigs.fa.gz',
+#    output:
+#        '{bucket}/public/refgen/linear/clean/comms/all_contigs.dist.tsv'
+#    threads: 4
+#    resources:
+#        time   = 2880,
+#        mem_mb = 24000
+#    shell:
+#        '''
+#            # calculate mash distance
+#            mash dist {input.fa} {input.fa} -s 10000 -i > {output}
+#        '''
+#
+#rule mash_to_network:
+#    input:
+#        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv'
+#    output:
+#        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.vertices.id2name.txt',
+#        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt',
+#        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.list.txt'
+#    threads: 1
+#    resources:
+#        time   = 20,
+#        mem_mb = 4000
+#    shell:
+#        '''
+#            python3 ./src/mash2net.py -m {input}
+#        '''
+#
+#rule identify_communities:
+#    input:
+#        verts = '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.vertices.id2name.txt',
+#        wts   = '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt',
+#        edges ='{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.list.txt'
+#    output:
+#        '{bucket}/public/refgen/linear/clean/sequence/seqs.dist.tsv.edges.weights.txt.communities.pdf',
+#    threads: 1
+#    resources:
+#        time   = 20,
+#        mem_mb = 4000
+#    shell:
+#        '''
+#            python3 ./src/net2communities.py \
+#                -e {input.edges} \
+#                -w {input.wts} \
+#                -n {input.verts} \
+#                --plot
+#        '''
+
+
+# sequence divergence to find ideal value of of p (default 90)
+#localrules: chrom_split
+#checkpoint chrom_split:
+#    input:
+#        fa  = rules.combine_seqs.output.fa,
+#        fai = rules.combine_seqs.output.fai
+#    output:
+#        directory('{bucket}/public/combine/chroms/')
+#    threads: 1
+#    resources:
+#        time   = 600,
+#        mem_mb = 4000
+#    shell:
+#        '''
+#            mkdir -p {output}
+#
+#            cut -f 1 {input.fai} | cut -f 3 -d '#' | sort | uniq | while read CHROM; do
+#                CHR_FASTA={output}/$CHROM.fa.gz
+#                samtools faidx {input.fa} $(grep -P $"$CHROM\t" {input.fai} | cut -f 1) | bgzip -@ {threads} > $CHR_FASTA
+#                echo "Generated $CHR_FASTA"
+#            done
+#        '''

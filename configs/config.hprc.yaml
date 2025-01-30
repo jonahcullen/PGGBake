@@ -5,7 +5,7 @@ assems: 'assemblies.tsv'
 
 pggb:
   ref_call: CHM13
-  haps: 4
+  haps: 2
   segm_len: [10000] # -s 10k (def) [10000, 35000, 50000, 100000]
   perc_ident: [95] # -p 95 (def) [90, 95, 96, 97, 98, 99]
   min_mat_len: [23] # -k 23 (def) [10, 23, 35, 50, 150, 300]

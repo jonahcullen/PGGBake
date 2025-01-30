@@ -23,10 +23,10 @@ rule all:
        #    u=genseqs.itertuples()
        #),
         expand(
-            '{bucket}/public/combine/all.dist.tsv.edges.weights.txt.communities.pdf',
+            '{bucket}/public/combine/chrom.max_divergence.txt',
             bucket=config['bucket']
         ),
 
 include: 'rules/prep_seqs.smk'
 include: 'rules/communities.smk'
-#include: 'rules/pggb.smk'
+include: 'rules/pggb.smk'
