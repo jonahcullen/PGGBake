@@ -10,8 +10,8 @@ checkpoint par_before_pggb:
     singularity: config['pggb']['image']
     threads: 16
     resources:
-        time   = 360,
-        mem_mb = 120000
+        time   = 480,
+        mem_mb = 240000
     shell:
         '''
             which() {{
@@ -25,31 +25,152 @@ checkpoint par_before_pggb:
                 -n {params.n_haps}
         '''
 
-def get_community_fastas(wildcards):
-    comm_dir = checkpoints.par_before_pggb.get(**wildcards).output[0]
-    fastas = str(Path(comm_dir) / 'all.fa.{hash}.community.{comm}.fa')
-    VHASH,COMMS, = glob_wildcards(fastas)
-    return sorted(expand(
-        '{bucket}/public/combine/communities/all.fa.{vhash}.community.{comm}.fa',
-        bucket=config['bucket'],
-        vhash=VHASH[0],
-        chrom=CHROMS,
-    ))
-
-localrules: max_divergence
-rule max_divergence:
+# this is a pretty silly way of renaming but makes things a bit easier below.
+# should rethink
+localrules: rename_community
+rule rename_community:
     input:
-        get_community_fastas
+        '{bucket}/public/combine/communities/all.fa.gz.bf3285f.community.{comm}.fa', 
     output:
-        '{bucket}/public/combine/chrom.max_divergence.txt',
-    threads: 1
+        '{bucket}/public/combine/communities/community.{comm}.fa'
+    shell:
+        '''
+            cp {input} {output}
+        '''
+
+# NOTE the hard carded hashes which should be calculated within or before.
+# there is an example rule pggb_chrom_builds below where I added code to 
+# calculate those hashes in the larger parameter sweep I initially built.
+# perhaps to switch to --names-with-params
+checkpoint pggb_builds:
+    input:
+        rules.rename_community.output[0]
+    output:
+        directory('{bucket}/public/communities/pggb_builds/community_{comm}')
+    params:
+        segm_len    = config['pggb']['segm_len'],
+        perc_ident  = config['pggb']['perc_ident'],
+        min_mat_len = config['pggb']['min_mat_len'],
+        n_haps      = config['pggb']['haps'],
+        poa_len     = str(config['pggb']['poa_len'][0].replace('.', ',')),
+    singularity: config['pggb']['image']
+    threads: 16
     resources:
-        time   = 10,
-        mem_mb = 100
+        time   = 1440,
+        mem_mb = 32000
+    shell:
+        '''
+            block_id_min=$(echo "scale=4; {params.perc_ident} / 100.0" | bc)
+            
+            wfmash=$(echo W-s{params.segm_len}-l25000-p{params.perc_ident}-n$(({params.n_haps}-1))-K19-F0.001-xfalse-X | sha256sum | head -c 7)
+            seqwish=$(echo k{params.min_mat_len}-f0-B10000000 | sha256sum | head -c 7)
+            smoothxg=$(echo h{params.n_haps}-G{params.poa_len}-j0-e0-d100-I"$block_id_min"-R0-p1,19,39,3,81,1-O0.001 | sha256sum | head -c 7)
+            
+            outdir={output}/"$wfmash"."$seqwish"."$smoothxg"/
+            mkdir -p "$outdir"
+
+            pggb \
+                -i {input} \
+                -o "$outdir" \
+                -s {params.segm_len} \
+                -p {params.perc_ident} \
+                -k {params.min_mat_len} \
+                -n {params.n_haps} \
+                -G {params.poa_len} \
+                --multiqc \
+                --stats \
+                --threads {threads} \
+                --poa-threads {threads}
+        '''
+
+localrules: PREFAKE
+rule PREFAKE:
+    input:
+        '{bucket}/public/communities/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/community.{comm}.fa.{wfmash}.{seqwish}.{smoothxg}.smooth.final.gfa'
+    output:
+        '{bucket}/public/pggb/communities/builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
     shell:
         '''
             touch {output}
         '''
+
+def get_community_gfas(wildcards):
+    # force snakemake to revaluate the DAG
+    comms_dir = checkpoints.par_before_pggb.get(**wildcards).output[0]
+    fastas = str(Path(comms_dir) / "all.fa.gz.{hash}.community.{comm}.fa")
+    # HASH will be the same for each community fasta and was determined 
+    # during partition before pggb
+    HASH,COMMS, = glob_wildcards(fastas)
+    
+    d = {
+        'WFMASHES': [],
+        'SEQWISHES': [],
+        'SMOOTHXGS': []
+    }
+
+    # process only the comunity 17
+    COMMS = ['17']
+
+    for i in COMMS:
+        print('iteration: ', i)
+        print(checkpoints.pggb_builds.get(bucket=config["bucket"], comm=i).output)
+        comm_done = glob.glob(f'{checkpoints.pggb_builds.get(bucket=config["bucket"], comm=i).output}/**/*.smooth.final.gfa', recursive=True)
+        print('dones: ', comm_done)
+        print(comm_done[0].split('/')[-1].split('.')[3:6])
+        wfmash,seqwish,smoothxg = comm_done[0].split('/')[-1].split('.')[3:6]
+        if wfmash not in d['WFMASHES']:
+            d['WFMASHES'].append(wfmash)
+        if seqwish not in d['SEQWISHES']:
+            d['SEQWISHES'].append(seqwish)
+        if smoothxg not in d['SMOOTHXGS']:
+            d['SMOOTHXGS'].append(smoothxg)
+
+   # return list of community gfas
+    return sorted(expand(
+        '{bucket}/public/communities/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
+        bucket=config['bucket'],
+        comm=COMMS,
+        wfmash=d['WFMASHES'],
+        seqwish=d['SEQWISHES'],
+        smoothxg=d['SMOOTHXGS']
+    ))
+
+localrules: POSTFAKE
+rule POSTFAKE:
+    input:
+        get_community_gfas
+    output:
+        '{bucket}/okay.txt'
+    shell:
+        '''
+            touch {output}
+        '''
+
+#def get_community_fastas(wildcards):
+#    comm_dir = checkpoints.par_before_pggb.get(**wildcards).output[0]
+#    fastas = str(Path(comm_dir) / 'all.fa.{hash}.community.{comm}.fa')
+#    VHASH,COMMS, = glob_wildcards(fastas)
+#    return sorted(expand(
+#        '{bucket}/public/combine/communities/all.fa.{vhash}.community.{comm}.fa',
+#        bucket=config['bucket'],
+#        vhash=VHASH[0],
+#        comm=COMMS,
+#    ))
+
+#localrules: max_divergence
+#rule max_divergence:
+#    input:
+#        get_community_fastas
+#    output:
+#        '{bucket}/public/combine/chrom.max_divergence.txt',
+#    threads: 1
+#    resources:
+#        time   = 10,
+#        mem_mb = 100
+#    shell:
+#        '''
+#            touch {output}
+#        '''
 
 # for pggb chrom (at least for now) use the value calculated from the max
 # divergence

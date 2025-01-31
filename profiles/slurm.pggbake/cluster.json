@@ -29,11 +29,6 @@
         "output" : ".logs/{rule}/community_{wildcards.comm}/%j.{rule}.out",
         "error"  : ".logs/{rule}/community_{wildcards.comm}/%j.{rule}.err"
     },
-    "max_divergence" :
-    {
-        "output" : ".logs/{rule}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/%j.{rule}.err"
-    },
     "pggb_chrom_builds" :
     {
         "output" : ".logs/{rule}/{wildcards.chrom}/s{wildcards.segm_len}_p{wildcards.perc_ident}_k{wildcards.min_mat_len}/G{wildcards.poa_len}/%j.{rule}.out",

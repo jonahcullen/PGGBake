@@ -574,18 +574,19 @@ if [[ "$input_paf" == false ]]; then
     fi
 fi
 
+# NOTE - removed "/scripts/" from paf2net.py and net2communities.py
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if [[ ! -s "$prefix_mappings_paf".mappings.$mapper.paf.edges.list.txt \
   || ! -s "$prefix_mappings_paf".mappings.$mapper.paf.edges.weights.txt \
   || ! -s "$prefix_mappings_paf".mappings.$mapper.paf.vertices.id2name.txt
   || $resume == false ]]; then
-  ($timer -f "$fmt" python3 "$SCRIPT_DIR"/scripts/paf2net.py -p "$prefix_mappings_paf".mappings.$mapper.paf) 2> >(tee -a "$log_file")
+  ($timer -f "$fmt" python3 "$SCRIPT_DIR"/paf2net.py -p "$prefix_mappings_paf".mappings.$mapper.paf) 2> >(tee -a "$log_file")
 fi
 
 # Not perfect, but at least one community will exist
 if [[ ! -s "$prefix_paf".community.0.txt  || $resume == false ]]; then
-  ($timer -f "$fmt" python3 "$SCRIPT_DIR"/scripts/net2communities.py \
+  ($timer -f "$fmt" python3 "$SCRIPT_DIR"/net2communities.py \
       -e "$prefix_mappings_paf".mappings.$mapper.paf.edges.list.txt \
       -w "$prefix_mappings_paf".mappings.$mapper.paf.edges.weights.txt \
       -n "$prefix_mappings_paf".mappings.$mapper.paf.vertices.id2name.txt \

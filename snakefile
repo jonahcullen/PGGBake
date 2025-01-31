@@ -23,7 +23,8 @@ rule all:
        #    u=genseqs.itertuples()
        #),
         expand(
-            '{bucket}/public/combine/chrom.max_divergence.txt',
+           #'{bucket}/public/combine/chrom.max_divergence.txt',
+            '{bucket}/okay.txt',
             bucket=config['bucket']
         ),
 
