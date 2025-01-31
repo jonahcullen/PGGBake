@@ -42,3 +42,51 @@ Possible choices: code, input, mtime, params, software-env
 
     Define what triggers the rerunning of a job. By default, all triggers are used, which guarantees that results are consistent with the workflow code and configuration. If you rather prefer the traditional way of just considering file modification dates, use ‘–rerun-trigger mtime’
 ```
+If the dry run looks _good_, the pipeline can be run locally like
+```
+ASSEM_DIR=/path/to/directory/of/assemblies/
+PROFILE=/path/to/pggbake/profiles/local.pggbake
+
+export APPTAINER_TMPDIR=/path/apptainer/tmpdir
+export TMPDIR=/path/to/tmpdir
+
+snakemake \
+    -s snakefile \
+    --configfile configs/config.hprc.yaml \
+    --use-singularity \
+    --singularity-args "-B $ASSEM_DIR" \
+    --profile "$PROFILE" \
+    --rerun-triggers mtime \
+    --keep-going
+```
+or on an HPC with slurm (assumes the batch script within `pggbake` repo) like
+```
+#!/bin/bash -l
+#SBATCH -t 24:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2gb
+#SBATCH --job-name submit_pggbake.slurm
+#SBATCH -o %j.submit_pggbake.out
+#SBATCH -e %j.submit_pggbake.err
+
+set -e
+cd $SLURM_SUBMIT_DIR
+conda activate SNAKENV
+
+ASSEM_DIR=/users/9/cull0084/projects/PGGBake/assemblies/
+PROFILE="$SLURM_SUBMIT_DIR/profiles/slurm.pggbake"
+
+export APPTAINER_TMPDIR=/scratch.global/mccuem_PGGBAKE
+export TMPDIR=/scratch.global/mccuem_PGGBAKE
+
+snakemake \
+    -s snakefile \
+    --configfile configs/config.hprc.yaml \
+    --use-singularity \
+    --singularity-args "-B $PWD,$ASSEM_DIR" \
+    --profile "$PROFILE" \
+    --rerun-triggers mtime \
+    --keep-going
+```
