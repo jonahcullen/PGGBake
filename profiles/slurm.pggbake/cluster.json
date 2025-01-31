@@ -24,6 +24,11 @@
         "output" : ".logs/{rule}/%j.{rule}.out",
         "error"  : ".logs/{rule}/%j.{rule}.err"
     },
+    "rename_and_index_community" :
+    {
+        "output" : ".logs/{rule}/community_{wildcards.comm}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/community_{wildcards.comm}/%j.{rule}.err"
+    },
     "pggb_builds" :
     {
         "output" : ".logs/{rule}/community_{wildcards.comm}/%j.{rule}.out",

@@ -25,17 +25,22 @@ checkpoint par_before_pggb:
                 -n {params.n_haps}
         '''
 
-# this is a pretty silly way of renaming but makes things a bit easier below.
-# should rethink
-localrules: rename_community
-rule rename_community:
+rule rename_and_index_community:
     input:
         '{bucket}/public/combine/communities/all.fa.gz.bf3285f.community.{comm}.fa', 
     output:
-        '{bucket}/public/combine/communities/community.{comm}.fa'
+        gz  = '{bucket}/public/combine/communities/community.{comm}.fa.gz',
+        fai = '{bucket}/public/combine/communities/community.{comm}.fa.gz.fai',
+        gzi = '{bucket}/public/combine/communities/community.{comm}.fa.gz.gzi',
+    singularity: config['pggb']['image']
+    threads: 1
+    resources:
+        time   = 30,
+        mem_mb = 4000
     shell:
         '''
-            cp {input} {output}
+            bgzip -@ {threads} -c {input} > {output.gz}
+            samtools faidx {output.gz}
         '''
 
 # NOTE the hard carded hashes which should be calculated within or before.
@@ -44,7 +49,9 @@ rule rename_community:
 # perhaps to switch to --names-with-params
 checkpoint pggb_builds:
     input:
-        rules.rename_community.output[0]
+        rules.rename_and_index_community.output.fai,
+        rules.rename_and_index_community.output.gzi,
+        gz = rules.rename_and_index_community.output.gz,
     output:
         directory('{bucket}/public/communities/pggb_builds/community_{comm}')
     params:
@@ -60,6 +67,11 @@ checkpoint pggb_builds:
         mem_mb = 32000
     shell:
         '''
+            which() {{
+                command -v "$1" 2>/dev/null
+            }}
+            export -f which
+            
             block_id_min=$(echo "scale=4; {params.perc_ident} / 100.0" | bc)
             
             wfmash=$(echo W-s{params.segm_len}-l25000-p{params.perc_ident}-n$(({params.n_haps}-1))-K19-F0.001-xfalse-X | sha256sum | head -c 7)
@@ -70,7 +82,7 @@ checkpoint pggb_builds:
             mkdir -p "$outdir"
 
             pggb \
-                -i {input} \
+                -i {input.gz} \
                 -o "$outdir" \
                 -s {params.segm_len} \
                 -p {params.perc_ident} \
