@@ -1,7 +1,7 @@
 
 workdir: /scratch.global/mccuem_PGGBAKE
 bucket: results
-assems: 'assemblies.tsv'
+assems: 'config/assemblies.tsv'
 
 pggb:
   ref_call: CHM13

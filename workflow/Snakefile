@@ -1,18 +1,22 @@
+import glob
 import pandas as pd
 
 workdir: config['workdir']
 #singularity: config['sif']
 #configfile: 'config.yaml'
 
-include: 'src/utils.py'
+include: 'rules/common.smk'
 
 # load assemblies into dataframe 
 genseqs = pd.read_csv(
-        Path(workflow.basedir) / config['assems'],
+        Path(workflow.basedir).parent / config['assems'],
         sep='\t', 
         header=None, 
         names=['name', 'fasta']
 )
+
+wildcard_constraints:
+    comm=r"\d+"
 
 rule all:
     input:

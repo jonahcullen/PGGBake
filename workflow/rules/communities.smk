@@ -49,7 +49,7 @@ rule mash_to_network:
         edge_wts  = '{bucket}/public/combine/all.dist.tsv.edges.weights.txt',
         edge_list = '{bucket}/public/combine/all.dist.tsv.edges.list.txt'
     params:
-        mash2net = Path(workflow.basedir) / 'src' / 'mash2net.py'
+        mash2net = Path(workflow.basedir) / 'scripts' / 'mash2net.py'
     threads: 1
     resources:
         time   = 20,
@@ -68,7 +68,7 @@ rule identify_communities:
     output:
         '{bucket}/public/combine/all.dist.tsv.edges.weights.txt.communities.pdf',
     params:
-        net2comm = Path(workflow.basedir) / 'src' / 'net2communities.py'
+        net2comm = Path(workflow.basedir) / 'scripts' / 'net2communities.py'
     threads: 1
     resources:
         time   = 20,

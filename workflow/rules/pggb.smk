@@ -6,7 +6,7 @@ checkpoint par_before_pggb:
         directory('{bucket}/public/combine/communities/')
     params:
         n_haps     = config['pggb']['haps'],
-        par_before = Path(workflow.basedir) / 'src' / 'partition-before-pggb'
+       #par_before = Path(workflow.basedir) / 'scripts' / 'partition-before-pggb'
     singularity: config['pggb']['image']
     threads: 16
     resources:
@@ -19,12 +19,14 @@ checkpoint par_before_pggb:
             }}
             export -f which
 
-            bash {params.par_before} \
+            partition-before-pggb \
                 -i {input} \
                 -o {output} \
                 -n {params.n_haps}
         '''
 
+# NOTE the hardcoded hash value from partition-before-pggb - needs to be
+# dynamic for changes in potential hash values
 rule rename_and_index_community:
     input:
         '{bucket}/public/combine/communities/all.fa.gz.bf3285f.community.{comm}.fa', 
@@ -43,17 +45,20 @@ rule rename_and_index_community:
             samtools faidx {output.gz}
         '''
 
-# NOTE the hard carded hashes which should be calculated within or before.
-# there is an example rule pggb_chrom_builds below where I added code to 
-# calculate those hashes in the larger parameter sweep I initially built.
-# perhaps to switch to --names-with-params
+# i have included the basic "important" params: segment length, percent
+# identity, and minimum match length. also included is poa length as an example
+# but need to make to sure update how those values are passed to smoothxg hash
+# calculation below. in fact, we should probably outsource all the hash calcs
+# to a separate python function to better fine tune and ensure accuracy. this
+# will also enable inclusion of all possible arguments in a separate (?) config
+# file to keep some parameters "less exposed" if wanted
 checkpoint pggb_builds:
     input:
         rules.rename_and_index_community.output.fai,
         rules.rename_and_index_community.output.gzi,
         gz = rules.rename_and_index_community.output.gz,
     output:
-        directory('{bucket}/public/communities/pggb_builds/community_{comm}')
+        directory('{bucket}/public/combine/pggb_builds/community_{comm}')
     params:
         segm_len    = config['pggb']['segm_len'],
         perc_ident  = config['pggb']['perc_ident'],
@@ -61,10 +66,10 @@ checkpoint pggb_builds:
         n_haps      = config['pggb']['haps'],
         poa_len     = str(config['pggb']['poa_len'][0].replace('.', ',')),
     singularity: config['pggb']['image']
-    threads: 16
+    threads: 24
     resources:
-        time   = 1440,
-        mem_mb = 32000
+        time   = 600,
+        mem_mb = 240000
     shell:
         '''
             which() {{
@@ -74,9 +79,9 @@ checkpoint pggb_builds:
             
             block_id_min=$(echo "scale=4; {params.perc_ident} / 100.0" | bc)
             
-            wfmash=$(echo W-s{params.segm_len}-l25000-p{params.perc_ident}-n$(({params.n_haps}-1))-K19-F0.001-xfalse-X | sha256sum | head -c 7)
-            seqwish=$(echo k{params.min_mat_len}-f0-B10000000 | sha256sum | head -c 7)
-            smoothxg=$(echo h{params.n_haps}-G{params.poa_len}-j0-e0-d100-I"$block_id_min"-R0-p1,19,39,3,81,1-O0.001 | sha256sum | head -c 7)
+            wfmash=$(echo "W-s{params.segm_len}-l25000-p{params.perc_ident}-n1-K19-F0.001-xfalse-g30-Y" | sha256sum | head -c 7)
+            seqwish=$(echo "k{params.min_mat_len}-f0-B10M" | sha256sum | head -c 7)
+            smoothxg=$(echo h{params.n_haps}-G{params.poa_len}-j0-e0-d100-I"$block_id_min"-R0-pfalse-O0.001 | sha256sum | head -c 7)
             
             outdir={output}/"$wfmash"."$seqwish"."$smoothxg"/
             mkdir -p "$outdir"
@@ -87,7 +92,6 @@ checkpoint pggb_builds:
                 -s {params.segm_len} \
                 -p {params.perc_ident} \
                 -k {params.min_mat_len} \
-                -n {params.n_haps} \
                 -G {params.poa_len} \
                 --multiqc \
                 --stats \
@@ -98,9 +102,9 @@ checkpoint pggb_builds:
 localrules: PREFAKE
 rule PREFAKE:
     input:
-        '{bucket}/public/communities/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/community.{comm}.fa.{wfmash}.{seqwish}.{smoothxg}.smooth.final.gfa'
+        '{bucket}/public/combine/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/community.{comm}.fa.gz.{wfmash}.{seqwish}.{smoothxg}.smooth.final.gfa'
     output:
-        '{bucket}/public/pggb/communities/builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
+        '{bucket}/public/combine/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
     shell:
         '''
             touch {output}
@@ -112,7 +116,11 @@ def get_community_gfas(wildcards):
     fastas = str(Path(comms_dir) / "all.fa.gz.{hash}.community.{comm}.fa")
     # HASH will be the same for each community fasta and was determined 
     # during partition before pggb
+    print('hello')
+    print(fastas)
     HASH,COMMS, = glob_wildcards(fastas)
+    print(HASH)
+    print(COMMS)
     
     d = {
         'WFMASHES': [],
@@ -120,16 +128,17 @@ def get_community_gfas(wildcards):
         'SMOOTHXGS': []
     }
 
-    # process only the comunity 17
-    COMMS = ['17']
+    # process only the comunity 16 ("cheated" to find chr20)
+    COMMS = ['16']
 
     for i in COMMS:
-        print('iteration: ', i)
-        print(checkpoints.pggb_builds.get(bucket=config["bucket"], comm=i).output)
-        comm_done = glob.glob(f'{checkpoints.pggb_builds.get(bucket=config["bucket"], comm=i).output}/**/*.smooth.final.gfa', recursive=True)
-        print('dones: ', comm_done)
-        print(comm_done[0].split('/')[-1].split('.')[3:6])
-        wfmash,seqwish,smoothxg = comm_done[0].split('/')[-1].split('.')[3:6]
+        comm_pat = '{}/**/*.smooth.final.gfa'.format(checkpoints.pggb_builds.get(bucket=config["bucket"], comm=i).output).strip()
+        comm_gfa = glob.glob(comm_pat, recursive=True)
+        if not comm_gfa:
+            raise ValueError('no gfas found for community {}'.format(i))
+        print(f'found files: {comm_gfa}')
+        dir_hashes = Path(comm_gfa[0]).parent.name.split('.')
+        wfmash,seqwish,smoothxg = dir_hashes
         if wfmash not in d['WFMASHES']:
             d['WFMASHES'].append(wfmash)
         if seqwish not in d['SEQWISHES']:
@@ -137,9 +146,12 @@ def get_community_gfas(wildcards):
         if smoothxg not in d['SMOOTHXGS']:
             d['SMOOTHXGS'].append(smoothxg)
 
+    print(d)
+
    # return list of community gfas
     return sorted(expand(
-        '{bucket}/public/communities/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
+        '{bucket}/public/combine/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
+       #'{bucket}/public/communities/pggb_builds/community_{comm}/{wfmash}.{seqwish}.{smoothxg}/done.txt',
         bucket=config['bucket'],
         comm=COMMS,
         wfmash=d['WFMASHES'],
